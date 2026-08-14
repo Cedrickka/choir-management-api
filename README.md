@@ -48,6 +48,16 @@ Health : `http://localhost:3000/api/v1/health`
 
 Chaque endpoint imbriqué sous une chorale vérifie un membership actif, l’état de la chorale et de l’organisation, puis la permission atomique requise.
 
+### API Lot 2 — calendrier pastoral
+
+- `GET|POST /api/v1/choirs/:choirId/pastoral-years`
+- `GET|POST /api/v1/choirs/:choirId/activities`
+- `GET|PATCH /api/v1/choirs/:choirId/activities/:activityId`
+- `POST /api/v1/choirs/:choirId/activities/:activityId/cancel`
+- `PATCH /api/v1/choirs/:choirId/activity-series/:seriesId`
+
+Les activités acceptent un fuseau IANA, une visibilité, un responsable, l’exigence de présence et des offsets de rappel. Les récurrences disponibles sont `WEEKLY`, `MONTHLY` et `CUSTOM`; les jours hebdomadaires suivent ISO-8601 (lundi = 1, dimanche = 7). Une série est limitée à 500 occurrences. Pour une récurrence mensuelle, un jour inexistant dans un mois est ignoré. Une occurrence modifiée devient une exception et n’est plus écrasée par les changements futurs de sa série. Les occurrences passées sont immuables.
+
 ## Docker local
 
 ```bash
