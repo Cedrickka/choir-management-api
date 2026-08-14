@@ -1,25 +1,30 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
+
 enum UserStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
 }
+
 enum OrganizationType {
   CHOIR
   PARISH
   OTHER
 }
+
 enum EntityStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
 }
+
 enum MembershipStatus {
   ACTIVE
   INACTIVE
@@ -27,133 +32,180 @@ enum MembershipStatus {
 }
 
 model User {
-  id String @id @default(uuid()) @db.Uuid
-  email String? @unique
-  phone String? @unique
-  passwordHash String
-  firstName String
-  lastName String
-  status UserStatus @default(ACTIVE)
-  memberships Membership[]
+  id            String         @id @default(uuid()) @db.Uuid
+  email         String?        @unique
+  phone         String?        @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  locale        String         @default("fr")
+  status        UserStatus     @default(ACTIVE)
+  memberships   Membership[]
   refreshTokens RefreshToken[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
   @@map("users")
 }
+
 model Organization {
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  type OrganizationType @default(CHOIR)
-  status EntityStatus @default(ACTIVE)
-  choirs Choir[]
-  roles Role[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String           @id @default(uuid()) @db.Uuid
+  name      String
+  type      OrganizationType @default(CHOIR)
+  status    EntityStatus     @default(ACTIVE)
+  choirs    Choir[]
+  roles     Role[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
   @@map("organizations")
 }
+
 model Choir {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name String
-  slug String @unique
-  timezone String @default("Africa/Kinshasa")
-  status EntityStatus @default(ACTIVE)
-  memberships Membership[]
-  voiceSections VoiceSection[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @db.Uuid
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String         @unique
+  timezone       String         @default("Africa/Kinshasa")
+  settings       Json           @default("{}")
+  status         EntityStatus   @default(ACTIVE)
+  memberships    Membership[]
+  voiceSections  VoiceSection[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
   @@index([organizationId])
   @@map("choirs")
 }
+
 model Membership {
-  id String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  choirId String @db.Uuid
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  choir Choir @relation(fields: [choirId], references: [id], onDelete: Cascade)
-  status MembershipStatus @default(ACTIVE)
-  joinedAt DateTime @default(now())
-  profile MemberProfile?
-  roles MembershipRole[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String                   @id @default(uuid()) @db.Uuid
+  userId             String                   @db.Uuid
+  choirId            String                   @db.Uuid
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  choir              Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  status             MembershipStatus         @default(ACTIVE)
+  joinedAt           DateTime                 @default(now())
+  archivedAt         DateTime?
+  profile            MemberProfile?
+  roles              MembershipRole[]
+  sectionAssignments VoiceSectionAssignment[]
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
   @@unique([userId, choirId])
   @@index([choirId, status])
   @@map("memberships")
 }
+
 model VoiceSection {
-  id String @id @default(uuid()) @db.Uuid
-  choirId String @db.Uuid
-  choir Choir @relation(fields: [choirId], references: [id], onDelete: Cascade)
-  name String
-  profiles MemberProfile[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String                   @id @default(uuid()) @db.Uuid
+  choirId     String                   @db.Uuid
+  choir       Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  name        String
+  order       Int                      @default(0)
+  profiles    MemberProfile[]
+  assignments VoiceSectionAssignment[]
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
   @@unique([choirId, name])
   @@map("voice_sections")
 }
+
 model MemberProfile {
-  membershipId String @id @db.Uuid
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  postName String?
-  birthDate DateTime? @db.Date
-  photoUrl String?
-  voiceSectionId String? @db.Uuid
-  voiceSection VoiceSection? @relation(fields: [voiceSectionId], references: [id], onDelete: SetNull)
-  joinedChoirAt DateTime?
-  notes String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  membershipId          String        @id @db.Uuid
+  membership            Membership    @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  postName              String?
+  gender                String?
+  birthDate             DateTime?     @db.Date
+  photoUrl              String?
+  voiceSectionId        String?       @db.Uuid
+  voiceSection          VoiceSection? @relation(fields: [voiceSectionId], references: [id], onDelete: SetNull)
+  joinedChoirAt         DateTime?
+  functionTitle         String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  whatsappConsentAt     DateTime?
+  whatsappConsentSource String?
+  notes                 String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
   @@map("member_profiles")
 }
+
+model VoiceSectionAssignment {
+  id             String       @id @default(uuid()) @db.Uuid
+  membershipId   String       @db.Uuid
+  voiceSectionId String       @db.Uuid
+  membership     Membership   @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  voiceSection   VoiceSection @relation(fields: [voiceSectionId], references: [id], onDelete: Restrict)
+  startsAt       DateTime     @default(now())
+  endsAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([membershipId, startsAt])
+  @@map("voice_section_assignments")
+}
+
 model Role {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String? @db.Uuid
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  code String
-  name String
-  isSystem Boolean @default(false)
-  permissions RolePermission[]
-  memberships MembershipRole[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String?          @db.Uuid
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code           String
+  name           String
+  isSystem       Boolean          @default(false)
+  permissions    RolePermission[]
+  memberships    MembershipRole[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
   @@unique([organizationId, code])
   @@map("roles")
 }
+
 model Permission {
-  id String @id @default(uuid()) @db.Uuid
-  code String @unique
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
   description String?
-  roles RolePermission[]
-  createdAt DateTime @default(now())
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+
   @@map("permissions")
 }
+
 model RolePermission {
-  roleId String @db.Uuid
-  permissionId String @db.Uuid
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@id([roleId, permissionId])
   @@map("role_permissions")
 }
+
 model MembershipRole {
-  membershipId String @db.Uuid
-  roleId String @db.Uuid
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  membershipId String     @db.Uuid
+  roleId       String     @db.Uuid
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
   @@id([membershipId, roleId])
   @@map("membership_roles")
 }
+
 model RefreshToken {
-  id String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String
-  expiresAt DateTime
-  revokedAt DateTime?
-  replacedById String? @db.Uuid
-  createdAt DateTime @default(now())
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @db.Uuid
+  createdAt    DateTime  @default(now())
+
   @@index([userId])
   @@map("refresh_tokens")
 }
