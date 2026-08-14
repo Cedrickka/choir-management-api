@@ -5,7 +5,9 @@ import { ActivitiesController } from './activities/activities.controller';
 import { ActivitiesService } from './activities/activities.service';
 import { PastoralYearsController } from './pastoral-years/pastoral-years.controller';
 import { PastoralYearsService } from './pastoral-years/pastoral-years.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
+  imports: [NotificationsModule],
   controllers: [ActivitiesController, PastoralYearsController],
   providers: [
     ActivitiesService,

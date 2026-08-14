@@ -14,6 +14,8 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { RolesModule } from './roles/roles.module';
 import { VoiceSectionsModule } from './voice-sections/voice-sections.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import { CalendarModule } from './calendar/calendar.module';
     VoiceSectionsModule,
     RolesModule,
     CalendarModule,
+    AttendanceModule,
+    NotificationsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

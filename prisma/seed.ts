@@ -14,7 +14,10 @@ const permissionCodes = [
   'roles.manage',
   'roles.assign',
   'attendance.scan',
+  'attendance.read',
   'attendance.correct',
+  'notifications.read',
+  'notifications.manage',
   'finance.read',
   'finance.manage',
   'music.read',
@@ -34,6 +37,9 @@ const rolePermissions: Record<string, string[]> = {
     'members.update',
     'roles.read',
     'attendance.correct',
+    'attendance.read',
+    'notifications.read',
+    'notifications.manage',
     'finance.read',
     'music.read',
     'announcements.manage',
@@ -49,6 +55,9 @@ const rolePermissions: Record<string, string[]> = {
     'members.update',
     'roles.read',
     'attendance.correct',
+    'attendance.read',
+    'notifications.read',
+    'notifications.manage',
     'announcements.manage',
     'calendar.read',
     'calendar.create',
@@ -69,10 +78,18 @@ const rolePermissions: Record<string, string[]> = {
     'choirs.read',
     'members.read',
     'attendance.scan',
+    'attendance.read',
     'attendance.correct',
+    'notifications.read',
   ],
   SECTION_LEADER: ['choirs.read', 'members.read', 'music.read'],
-  MEMBER: ['choirs.read', 'members.read', 'music.read', 'calendar.read'],
+  MEMBER: [
+    'choirs.read',
+    'members.read',
+    'music.read',
+    'calendar.read',
+    'notifications.read',
+  ],
 };
 async function main() {
   const organization = await prisma.organization.upsert({
@@ -192,6 +209,44 @@ async function main() {
       create: { membershipId: membership.id, roleId: roleRows[roleCode].id },
     });
   }
+  await prisma.notificationTemplate.upsert({
+    where: {
+      choirId_name_channel: {
+        choirId: choir.id,
+        name: 'Rappel activité 24 h',
+        channel: 'IN_APP',
+      },
+    },
+    update: {},
+    create: {
+      choirId: choir.id,
+      name: 'Rappel activité 24 h',
+      trigger: 'ACTIVITY_REMINDER',
+      channel: 'IN_APP',
+      title: 'Rappel : {Activite}',
+      body: '{Activite} est prévue le {Date} à {Heure}, {Lieu}.',
+      rules: { offsetMinutes: 1440 },
+    },
+  });
+  await prisma.notificationTemplate.upsert({
+    where: {
+      choirId_name_channel: {
+        choirId: choir.id,
+        name: 'Rappel retard 10 min',
+        channel: 'PUSH',
+      },
+    },
+    update: {},
+    create: {
+      choirId: choir.id,
+      name: 'Rappel retard 10 min',
+      trigger: 'LATE_ARRIVAL',
+      channel: 'PUSH',
+      title: 'Votre présence',
+      body: 'Le pointage de {Activite} est ouvert.',
+      rules: { minutesAfter: 10 },
+    },
+  });
 }
 main()
   .catch((error) => {

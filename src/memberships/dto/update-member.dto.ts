@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
+import { MembershipStatus } from '@prisma/client';
 export class UpdateMemberDto {
   @ApiPropertyOptional() @IsOptional() @IsString() postName?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() birthDate?: string;
@@ -8,6 +16,21 @@ export class UpdateMemberDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() voiceSectionId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() functionTitle?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() emergencyContactName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() emergencyContactPhone?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  emergencyContactName?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  emergencyContactPhone?: string;
+  @ApiPropertyOptional({ enum: MembershipStatus })
+  @IsOptional()
+  @IsEnum(MembershipStatus)
+  status?: MembershipStatus;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() whatsappConsent?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  whatsappConsentSource?: string;
 }

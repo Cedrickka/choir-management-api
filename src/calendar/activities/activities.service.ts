@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { PrismaService } from '../../database/prisma.service';
 import { RecurrenceCalculator } from '../recurrence/recurrence-calculator';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { ListActivitiesQuery } from './dto/list-activities.query';
 import {
@@ -14,7 +16,13 @@ import {
 } from './dto/update-activity.dto';
 @Injectable()
 export class ActivitiesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private notifications?: NotificationsService,
+  ) {}
+  private async schedule(activityId: string) {
+    await this.notifications?.scheduleActivity(activityId);
+  }
   private validTimezone(timezone: string) {
     if (!DateTime.now().setZone(timezone).isValid)
       throw new BadRequestException('Invalid timezone');
@@ -102,8 +110,8 @@ export class ActivitiesService {
       attendanceRequired: dto.attendanceRequired,
       reminderOffsetsMinutes: dto.reminderOffsetsMinutes || [],
     };
-    if (!dto.recurrence)
-      return this.prisma.activity.create({
+    if (!dto.recurrence) {
+      const activity = await this.prisma.activity.create({
         data: {
           ...common,
           startsAt,
@@ -115,6 +123,9 @@ export class ActivitiesService {
           },
         },
       });
+      await this.schedule(activity.id);
+      return activity;
+    }
     const occurrences = RecurrenceCalculator.generate(dto.startsAt, timezone, {
       type: dto.recurrence.type,
       until: dto.recurrence.until,
@@ -134,7 +145,7 @@ export class ActivitiesService {
         new Date(last.getTime() + duration),
       );
     }
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const series = await tx.activitySeries.create({
         data: {
           choirId,
@@ -172,6 +183,14 @@ export class ActivitiesService {
       }
       return { seriesId: series.id, occurrenceCount: occurrences.length };
     });
+    if (this.notifications) {
+      const created = await this.prisma.activity.findMany({
+        where: { seriesId: result.seriesId },
+        select: { id: true },
+      });
+      for (const activity of created) await this.schedule(activity.id);
+    }
+    return result;
   }
   async list(
     choirId: string,
@@ -277,7 +296,7 @@ export class ActivitiesService {
     );
     await this.validateTargets(choirId, dto.targetMembershipIds);
     const { targetMembershipIds, ...data } = dto;
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       if (targetMembershipIds) {
         await tx.activityTarget.deleteMany({ where: { activityId: id } });
         if (targetMembershipIds.length)
@@ -299,12 +318,14 @@ export class ActivitiesService {
         },
       });
     });
+    await this.schedule(id);
+    return updated;
   }
   async cancel(choirId: string, id: string, reason: string) {
     const current = await this.get(choirId, id);
     if (current.startsAt <= new Date())
       throw new BadRequestException('Past activities are immutable');
-    return this.prisma.activity.update({
+    const cancelled = await this.prisma.activity.update({
       where: { id },
       data: {
         status: 'CANCELLED',
@@ -312,6 +333,8 @@ export class ActivitiesService {
         isSeriesOverride: Boolean(current.seriesId) || current.isSeriesOverride,
       },
     });
+    await this.schedule(id);
+    return cancelled;
   }
   async updateSeries(
     choirId: string,
@@ -333,6 +356,18 @@ export class ActivitiesService {
       },
       data: dto,
     });
+    if (this.notifications) {
+      const future = await this.prisma.activity.findMany({
+        where: {
+          choirId,
+          seriesId,
+          startsAt: { gt: new Date() },
+          isSeriesOverride: false,
+        },
+        select: { id: true },
+      });
+      for (const activity of future) await this.schedule(activity.id);
+    }
     return { updatedOccurrences: result.count };
   }
 }

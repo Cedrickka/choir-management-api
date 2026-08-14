@@ -58,6 +58,25 @@ Chaque endpoint imbriqué sous une chorale vérifie un membership actif, l’ét
 
 Les activités acceptent un fuseau IANA, une visibilité, un responsable, l’exigence de présence et des offsets de rappel. Les récurrences disponibles sont `WEEKLY`, `MONTHLY` et `CUSTOM`; les jours hebdomadaires suivent ISO-8601 (lundi = 1, dimanche = 7). Une série est limitée à 500 occurrences. Pour une récurrence mensuelle, un jour inexistant dans un mois est ignoré. Une occurrence modifiée devient une exception et n’est plus écrasée par les changements futurs de sa série. Les occurrences passées sont immuables.
 
+## Lot 3 — présence QR
+
+- `POST /api/v1/choirs/:choirId/activities/:activityId/attendance/qr`
+- `POST /api/v1/choirs/:choirId/activities/:activityId/attendance/scan`
+- `GET /api/v1/choirs/:choirId/activities/:activityId/attendance`
+- `POST /api/v1/choirs/:choirId/attendance/:attendanceId/corrections`
+
+Le QR signé vaut deux minutes. Seul le hash de son identifiant est stocké et sa consommation atomique empêche sa réutilisation. L’heure serveur calcule retard et ponctualité ; la sortie calcule durée et participation. Toute correction exige un motif et crée un audit avant/après.
+
+## Lot 4 — notifications
+
+- `GET|POST /api/v1/choirs/:choirId/notification-templates`
+- `PATCH /api/v1/choirs/:choirId/notification-templates/:id`
+- `GET /api/v1/choirs/:choirId/notifications`
+- `POST /api/v1/choirs/:choirId/notifications/:id/read`
+- `POST /api/v1/choirs/:choirId/devices`
+
+Les jobs gardent un instantané des messages et une clé d’idempotence unique. Le scheduler PostgreSQL fonctionne sans Redis ; BullMQ s’active avec `REDIS_URL`. Les rappels de retard sont annulés dès l’arrivée et revérifiés à l’exécution. Firebase Cloud Messaging s’active avec `FIREBASE_PROJECT_ID` et `FIREBASE_SERVICE_ACCOUNT_BASE64` (JSON du compte de service encodé en Base64).
+
 ## Docker local
 
 ```bash
