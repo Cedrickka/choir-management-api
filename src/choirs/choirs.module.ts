@@ -1,0 +1,1 @@
+import { Module } from '@nestjs/common'; import { ChoirsController } from './choirs.controller'; import { TenantAccessGuard } from '../common/guards/tenant-access.guard'; import { PermissionsGuard } from '../common/guards/permissions.guard'; @Module({controllers:[ChoirsController],providers:[TenantAccessGuard,PermissionsGuard]}) export class ChoirsModule {}
