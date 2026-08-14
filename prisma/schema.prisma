@@ -31,6 +31,37 @@ enum MembershipStatus {
   SUSPENDED
 }
 
+enum ActivityType {
+  REHEARSAL
+  MASS
+  CONCERT
+  MEETING
+  TRAINING
+  RECOLLECTION
+  OUTING
+  PERFORMANCE
+  OTHER
+}
+
+enum ActivityStatus {
+  SCHEDULED
+  CANCELLED
+  POSTPONED
+  COMPLETED
+}
+
+enum ActivityVisibility {
+  ALL_MEMBERS
+  LEADERS_ONLY
+  TARGETED
+}
+
+enum RecurrenceType {
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
 model User {
   id            String         @id @default(uuid()) @db.Uuid
   email         String?        @unique
@@ -62,41 +93,124 @@ model Organization {
 }
 
 model Choir {
-  id             String         @id @default(uuid()) @db.Uuid
-  organizationId String         @db.Uuid
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
-  slug           String         @unique
-  timezone       String         @default("Africa/Kinshasa")
-  settings       Json           @default("{}")
-  status         EntityStatus   @default(ACTIVE)
+  slug           String           @unique
+  timezone       String           @default("Africa/Kinshasa")
+  settings       Json             @default("{}")
+  status         EntityStatus     @default(ACTIVE)
   memberships    Membership[]
   voiceSections  VoiceSection[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  pastoralYears  PastoralYear[]
+  activitySeries ActivitySeries[]
+  activities     Activity[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([organizationId])
   @@map("choirs")
 }
 
 model Membership {
-  id                 String                   @id @default(uuid()) @db.Uuid
-  userId             String                   @db.Uuid
-  choirId            String                   @db.Uuid
-  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  choir              Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
-  status             MembershipStatus         @default(ACTIVE)
-  joinedAt           DateTime                 @default(now())
-  archivedAt         DateTime?
-  profile            MemberProfile?
-  roles              MembershipRole[]
-  sectionAssignments VoiceSectionAssignment[]
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
+  id                    String                   @id @default(uuid()) @db.Uuid
+  userId                String                   @db.Uuid
+  choirId               String                   @db.Uuid
+  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  choir                 Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  status                MembershipStatus         @default(ACTIVE)
+  joinedAt              DateTime                 @default(now())
+  archivedAt            DateTime?
+  profile               MemberProfile?
+  roles                 MembershipRole[]
+  sectionAssignments    VoiceSectionAssignment[]
+  responsibleActivities Activity[]               @relation("ActivityResponsible")
+  targetedActivities    ActivityTarget[]
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
 
   @@unique([userId, choirId])
   @@index([choirId, status])
   @@map("memberships")
+}
+
+model PastoralYear {
+  id         String     @id @default(uuid()) @db.Uuid
+  choirId    String     @db.Uuid
+  choir      Choir      @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  name       String
+  startDate  DateTime   @db.Date
+  endDate    DateTime   @db.Date
+  isActive   Boolean    @default(false)
+  activities Activity[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([choirId, name])
+  @@index([choirId, startDate, endDate])
+  @@map("pastoral_years")
+}
+
+model ActivitySeries {
+  id             String         @id @default(uuid()) @db.Uuid
+  choirId        String         @db.Uuid
+  choir          Choir          @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  recurrenceType RecurrenceType
+  interval       Int            @default(1)
+  daysOfWeek     Int[]          @default([])
+  customDates    DateTime[]     @default([])
+  until          DateTime
+  timezone       String
+  activities     Activity[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([choirId])
+  @@map("activity_series")
+}
+
+model Activity {
+  id                      String             @id @default(uuid()) @db.Uuid
+  choirId                 String             @db.Uuid
+  choir                   Choir              @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  pastoralYearId          String?            @db.Uuid
+  pastoralYear            PastoralYear?      @relation(fields: [pastoralYearId], references: [id], onDelete: SetNull)
+  seriesId                String?            @db.Uuid
+  series                  ActivitySeries?    @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  type                    ActivityType
+  status                  ActivityStatus     @default(SCHEDULED)
+  title                   String
+  startsAt                DateTime
+  endsAt                  DateTime
+  timezone                String
+  location                String?
+  description             String?
+  responsibleMembershipId String?            @db.Uuid
+  responsibleMembership   Membership?        @relation("ActivityResponsible", fields: [responsibleMembershipId], references: [id], onDelete: SetNull)
+  visibility              ActivityVisibility @default(ALL_MEMBERS)
+  attendanceRequired      Boolean            @default(true)
+  reminderOffsetsMinutes  Int[]              @default([])
+  cancellationReason      String?
+  isSeriesOverride        Boolean            @default(false)
+  targets                 ActivityTarget[]
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@unique([seriesId, startsAt])
+  @@index([choirId, startsAt])
+  @@index([pastoralYearId])
+  @@map("activities")
+}
+
+model ActivityTarget {
+  activityId   String     @db.Uuid
+  membershipId String     @db.Uuid
+  activity     Activity   @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, membershipId])
+  @@map("activity_targets")
 }
 
 model VoiceSection {
