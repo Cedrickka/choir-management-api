@@ -35,6 +35,19 @@ npm run prisma:studio
 Swagger : `http://localhost:3000/api/docs`  
 Health : `http://localhost:3000/api/v1/health`
 
+### API Lot 1
+
+- `GET /api/v1/me` : compte courant et appartenances actives
+- `GET /api/v1/choirs/:choirId` : chorale courante
+- `GET /api/v1/choirs/:choirId/organization` : organisation cliente
+- `GET|POST /api/v1/choirs/:choirId/members` : membres
+- `GET|PATCH|DELETE /api/v1/choirs/:choirId/members/:membershipId` : profil et archivage logique
+- `GET|POST|PATCH /api/v1/choirs/:choirId/voice-sections` : pupitres personnalisables
+- `GET|POST /api/v1/choirs/:choirId/roles` : rôles et permissions
+- `POST /api/v1/choirs/:choirId/roles/memberships/:membershipId` : affectation d’un rôle
+
+Chaque endpoint imbriqué sous une chorale vérifie un membership actif, l’état de la chorale et de l’organisation, puis la permission atomique requise.
+
 ## Docker local
 
 ```bash
