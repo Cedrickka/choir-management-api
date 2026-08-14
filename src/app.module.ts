@@ -13,9 +13,33 @@ import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { RolesModule } from './roles/roles.module';
 import { VoiceSectionsModule } from './voice-sections/voice-sections.module';
+import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateConfig }), LoggerModule.forRoot({ pinoHttp: { level: process.env.LOG_LEVEL || 'info', redact: ['req.headers.authorization', 'req.body.password', 'req.body.temporaryPassword', 'req.body.refreshToken'] } }), ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]), DatabaseModule, HealthModule, AuthModule, ChoirsModule, OrganizationsModule, MembershipsModule, VoiceSectionsModule, RolesModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate: validateConfig }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.LOG_LEVEL || 'info',
+        redact: [
+          'req.headers.authorization',
+          'req.body.password',
+          'req.body.temporaryPassword',
+          'req.body.refreshToken',
+        ],
+      },
+    }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    DatabaseModule,
+    HealthModule,
+    AuthModule,
+    ChoirsModule,
+    OrganizationsModule,
+    MembershipsModule,
+    VoiceSectionsModule,
+    RolesModule,
+    CalendarModule,
+  ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
