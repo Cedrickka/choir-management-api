@@ -9,9 +9,13 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { ChoirsModule } from './choirs/choirs.module';
+import { MembershipsModule } from './memberships/memberships.module';
+import { OrganizationsModule } from './organizations/organizations.module';
+import { RolesModule } from './roles/roles.module';
+import { VoiceSectionsModule } from './voice-sections/voice-sections.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateConfig }), LoggerModule.forRoot({ pinoHttp: { level: process.env.LOG_LEVEL || 'info', redact: ['req.headers.authorization', 'req.body.password', 'req.body.refreshToken'] } }), ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]), DatabaseModule, HealthModule, AuthModule, ChoirsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateConfig }), LoggerModule.forRoot({ pinoHttp: { level: process.env.LOG_LEVEL || 'info', redact: ['req.headers.authorization', 'req.body.password', 'req.body.temporaryPassword', 'req.body.refreshToken'] } }), ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]), DatabaseModule, HealthModule, AuthModule, ChoirsModule, OrganizationsModule, MembershipsModule, VoiceSectionsModule, RolesModule],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

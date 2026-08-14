@@ -1,0 +1,2 @@
+import { Module } from '@nestjs/common'; import { MembersController } from './members.controller'; import { MembersService } from './members.service'; import { TenantAccessGuard } from '../common/guards/tenant-access.guard'; import { PermissionsGuard } from '../common/guards/permissions.guard';
+@Module({ controllers:[MembersController], providers:[MembersService,TenantAccessGuard,PermissionsGuard] }) export class MembershipsModule {}
