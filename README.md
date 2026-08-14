@@ -35,6 +35,10 @@ npm run prisma:studio
 Swagger : `http://localhost:3000/api/docs`  
 Health : `http://localhost:3000/api/v1/health`
 
+### Connexion Supabase sur Hostinger
+
+Le fichier racine `db.js` expose un client `@supabase/supabase-js` compatible avec l’assistant Hostinger. Il lit `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_ANON_KEY`/`SUPABASE_KEY`) sans coder de secret en dur. Ce client est réservé aux futurs services Supabase comme Storage. Prisma continue d’utiliser `DATABASE_URL` pour toutes les données métier, transactions et migrations PostgreSQL ; les variables Supabase ne remplacent donc pas `DATABASE_URL`.
+
 ### API Lot 1
 
 - `GET /api/v1/me` : compte courant et appartenances actives
