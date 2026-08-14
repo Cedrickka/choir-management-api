@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_USER: choir, POSTGRES_PASSWORD: choir, POSTGRES_DB: choir_management }
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U choir -d choir_management"], interval: 5s, timeout: 5s, retries: 10 }
+  redis:
+    image: redis:8-alpine
+    profiles: [redis]
+    ports: ["6379:6379"]
+  api:
+    build: .
+    env_file: .env
+    ports: ["3000:3000"]
+    depends_on: { postgres: { condition: service_healthy } }
+volumes: { postgres_data: {} }
