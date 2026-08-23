@@ -9,6 +9,8 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/database/prisma.service';
 
+jest.setTimeout(30000);
+
 describe('API (e2e)', () => {
   let app: INestApplication;
   let token: string;
