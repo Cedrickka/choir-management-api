@@ -16,6 +16,7 @@ import { VoiceSectionsModule } from './voice-sections/voice-sections.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     CalendarModule,
     AttendanceModule,
     NotificationsModule,
+    StatisticsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

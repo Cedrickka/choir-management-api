@@ -114,6 +114,12 @@ describe('API (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200)
       .expect((r) => expect(r.body.email).toBe('membre@csjb.local')));
+  it('GET /me/statistics', () =>
+    request(app.getHttpServer())
+      .get('/api/v1/me/statistics')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect((r) => expect(r.body.data).toEqual([])));
   it('isolates Choir B', () =>
     request(app.getHttpServer())
       .get(`/api/v1/choirs/${choirB}`)
@@ -134,6 +140,11 @@ describe('API (e2e)', () => {
         email: 'x@y.cd',
         temporaryPassword: 'Temporary-123',
       })
+      .expect(403));
+  it('denies MEMBER reading choir statistics', () =>
+    request(app.getHttpServer())
+      .get(`/api/v1/choirs/${choirA}/statistics`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(403));
   it('allows MEMBER to read the calendar', () =>
     request(app.getHttpServer())

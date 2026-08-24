@@ -81,6 +81,15 @@ Le QR signé vaut deux minutes. Seul le hash de son identifiant est stocké et s
 
 Les jobs gardent un instantané des messages et une clé d’idempotence unique. Le scheduler PostgreSQL fonctionne sans Redis ; BullMQ s’active avec `REDIS_URL`. Les rappels de retard sont annulés dès l’arrivée et revérifiés à l’exécution. Firebase Cloud Messaging s’active avec `FIREBASE_PROJECT_ID` et `FIREBASE_SERVICE_ACCOUNT_BASE64` (JSON du compte de service encodé en Base64).
 
+## Lot 5 — statistiques
+
+- `GET /api/v1/me/statistics`
+- `GET /api/v1/choirs/:choirId/statistics`
+- `GET /api/v1/choirs/:choirId/statistics/members`
+- `GET /api/v1/choirs/:choirId/statistics/export.csv`
+
+Les statistiques sont recalculées depuis les activités et pointages sources : aucune agrégation non auditable n’est la source de vérité. Les filtres initiaux couvrent période, type d’activité, membre et pupitre. Le dénominateur est explicité dans chaque réponse : seules les activités passées, non annulées/reportées, avec présence requise, et pour lesquelles le membre est attendu, entrent dans le taux d’assiduité. La ponctualité utilise les arrivées à l’heure divisées par les présences enregistrées. Les statistiques personnelles ne dévoilent jamais les données d’autres choristes ; les statistiques globales et exports exigent la permission de lecture des présences.
+
 ## Docker local
 
 ```bash
