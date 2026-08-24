@@ -20,10 +20,15 @@ const permissionCodes = [
   'notifications.manage',
   'reports.read',
   'reports.export',
+  'liturgy.read',
+  'liturgy.manage',
+  'media.read',
+  'media.manage',
   'finance.read',
   'finance.manage',
   'music.read',
   'music.manage',
+  'announcements.read',
   'announcements.manage',
   'calendar.read',
   'calendar.create',
@@ -44,8 +49,13 @@ const rolePermissions: Record<string, string[]> = {
     'notifications.manage',
     'reports.read',
     'reports.export',
+    'liturgy.read',
+    'liturgy.manage',
+    'media.read',
+    'media.manage',
     'finance.read',
     'music.read',
+    'announcements.read',
     'announcements.manage',
     'calendar.read',
     'calendar.create',
@@ -64,6 +74,11 @@ const rolePermissions: Record<string, string[]> = {
     'notifications.manage',
     'reports.read',
     'reports.export',
+    'liturgy.read',
+    'liturgy.manage',
+    'media.read',
+    'media.manage',
+    'announcements.read',
     'announcements.manage',
     'calendar.read',
     'calendar.create',
@@ -75,11 +90,22 @@ const rolePermissions: Record<string, string[]> = {
     'roles.read',
     'music.read',
     'music.manage',
+    'liturgy.read',
+    'liturgy.manage',
+    'media.read',
+    'media.manage',
+    'announcements.read',
     'calendar.read',
     'calendar.create',
     'calendar.update',
   ],
-  TREASURER: ['choirs.read', 'members.read', 'finance.read', 'finance.manage'],
+  TREASURER: [
+    'choirs.read',
+    'members.read',
+    'finance.read',
+    'finance.manage',
+    'announcements.read',
+  ],
   ATTENDANCE_CONTROLLER: [
     'choirs.read',
     'members.read',
@@ -87,14 +113,25 @@ const rolePermissions: Record<string, string[]> = {
     'attendance.read',
     'attendance.correct',
     'notifications.read',
+    'announcements.read',
   ],
-  SECTION_LEADER: ['choirs.read', 'members.read', 'music.read'],
+  SECTION_LEADER: [
+    'choirs.read',
+    'members.read',
+    'music.read',
+    'announcements.read',
+    'liturgy.read',
+    'media.read',
+  ],
   MEMBER: [
     'choirs.read',
     'members.read',
     'music.read',
     'calendar.read',
     'notifications.read',
+    'announcements.read',
+    'liturgy.read',
+    'media.read',
   ],
 };
 async function main() {
@@ -189,6 +226,7 @@ async function main() {
     ['membre2@csjb.local', 'Marie', 'Membre', 'MEMBER'],
   ];
   const passwordHash = await bcrypt.hash('Demo-CSJB-2026!', 12);
+  const demoMemberships: Record<string, string> = {};
   for (const [email, firstName, lastName, roleCode] of demos) {
     const user = await prisma.user.upsert({
       where: { email },
@@ -214,7 +252,162 @@ async function main() {
       update: {},
       create: { membershipId: membership.id, roleId: roleRows[roleCode].id },
     });
+    demoMemberships[email] = membership.id;
   }
+  await prisma.financeFund.upsert({
+    where: {
+      choirId_name_currency: {
+        choirId: choir.id,
+        name: 'Caisse ordinaire',
+        currency: 'CDF',
+      },
+    },
+    update: {},
+    create: {
+      id: '33333333-3333-4333-8333-333333333333',
+      choirId: choir.id,
+      name: 'Caisse ordinaire',
+      type: 'ORDINARY',
+      currency: 'CDF',
+      initialBalance: 0,
+    },
+  });
+  await prisma.financeFund.upsert({
+    where: {
+      choirId_name_currency: {
+        choirId: choir.id,
+        name: 'Assistance',
+        currency: 'USD',
+      },
+    },
+    update: {},
+    create: {
+      id: '44444444-4444-4444-8444-444444444444',
+      choirId: choir.id,
+      name: 'Assistance',
+      type: 'ASSISTANCE',
+      currency: 'USD',
+      initialBalance: 0,
+    },
+  });
+  const song = await prisma.song.upsert({
+    where: { id: '55555555-5555-4555-8555-555555555555' },
+    update: {},
+    create: {
+      id: '55555555-5555-4555-8555-555555555555',
+      choirId: choir.id,
+      title: 'Kyrie eleison',
+      language: 'fr',
+      category: 'Ordinaire de messe',
+      liturgicalSeason: 'ORDINARY_TIME',
+      tags: ['messe', 'kyrie'],
+      status: 'ACTIVE',
+      lyrics: 'Kyrie eleison\nChriste eleison\nKyrie eleison',
+      createdByMembershipId: demoMemberships['maestro@csjb.local'],
+    },
+  });
+  const soprano = await prisma.voiceSection.findFirst({
+    where: { choirId: choir.id, name: 'Soprano' },
+  });
+  if (soprano) {
+    await prisma.songVoiceSectionMastery.upsert({
+      where: {
+        songId_voiceSectionId: {
+          songId: song.id,
+          voiceSectionId: soprano.id,
+        },
+      },
+      update: { status: 'IN_PROGRESS' },
+      create: {
+        choirId: choir.id,
+        songId: song.id,
+        voiceSectionId: soprano.id,
+        status: 'IN_PROGRESS',
+        updatedByMembershipId: demoMemberships['maestro@csjb.local'],
+      },
+    });
+  }
+  await prisma.songTrack.upsert({
+    where: { id: '56565656-5656-4656-8656-565656565656' },
+    update: {},
+    create: {
+      id: '56565656-5656-4656-8656-565656565656',
+      choirId: choir.id,
+      songId: song.id,
+      voiceSectionId: soprano?.id,
+      type: 'SOPRANO',
+      title: 'Guide Soprano',
+      visibility: 'VOICE_SECTION',
+      storageKey: 'demo/audio/kyrie-soprano.mp3',
+      mimeType: 'audio/mpeg',
+      sizeBytes: 1024,
+      checksum: 'demo-checksum-kyrie-soprano',
+      durationSeconds: 60,
+    },
+  });
+  const mass = await prisma.activity.upsert({
+    where: { id: '66666666-6666-4666-8666-666666666666' },
+    update: {},
+    create: {
+      id: '66666666-6666-4666-8666-666666666666',
+      choirId: choir.id,
+      pastoralYearId: pastoralYear.id,
+      type: ActivityType.MASS,
+      title: 'Messe dominicale',
+      startsAt: new Date('2026-09-06T08:00:00Z'),
+      endsAt: new Date('2026-09-06T10:00:00Z'),
+      timezone: 'Africa/Kinshasa',
+      location: 'Paroisse Saint Jean Bosco',
+    },
+  });
+  await prisma.massContent.upsert({
+    where: { activityId: mass.id },
+    update: {},
+    create: {
+      choirId: choir.id,
+      activityId: mass.id,
+      title: 'Messe dominicale',
+      liturgicalDate: new Date('2026-09-06'),
+      readingsReferences: {
+        firstReading: 'Référence à compléter',
+        gospel: 'Référence à compléter',
+      },
+      summary: 'Résumé liturgique à compléter par le comité.',
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      createdByMembershipId: demoMemberships['secretaire@csjb.local'],
+    },
+  });
+  await prisma.massSongbook.upsert({
+    where: { id: '88888888-8888-4888-8888-888888888888' },
+    update: {},
+    create: {
+      id: '88888888-8888-4888-8888-888888888888',
+      choirId: choir.id,
+      activityId: mass.id,
+      title: 'Carnet de chants - Messe dominicale',
+      storageKey: 'demo/pdf/carnet-messe-dominicale.pdf',
+      mimeType: 'application/pdf',
+      version: 1,
+      createdByMembershipId: demoMemberships['secretaire@csjb.local'],
+    },
+  });
+  await prisma.announcement.upsert({
+    where: { id: '77777777-7777-4777-8777-777777777777' },
+    update: {},
+    create: {
+      id: '77777777-7777-4777-8777-777777777777',
+      choirId: choir.id,
+      title: 'Bienvenue sur Choir Management',
+      body: 'Merci de vérifier votre profil, votre pupitre et le calendrier des répétitions.',
+      priority: 'IMPORTANT',
+      audienceType: 'ALL_MEMBERS',
+      status: 'PUBLISHED',
+      publishAt: new Date(),
+      readRequired: true,
+      createdByMembershipId: demoMemberships['secretaire@csjb.local'],
+    },
+  });
   await prisma.notificationTemplate.upsert({
     where: {
       choirId_name_channel: {

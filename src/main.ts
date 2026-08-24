@@ -44,6 +44,10 @@ async function bootstrap() {
     .addTag('Members')
     .addTag('Calendar')
     .addTag('Reports')
+    .addTag('Finance')
+    .addTag('Music')
+    .addTag('Liturgy')
+    .addTag('Announcements')
     .build();
   SwaggerModule.setup(
     'api/docs',

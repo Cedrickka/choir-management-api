@@ -146,6 +146,39 @@ describe('API (e2e)', () => {
       .get(`/api/v1/choirs/${choirA}/statistics`)
       .set('Authorization', `Bearer ${token}`)
       .expect(403));
+  it('denies MEMBER creating a finance expense', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/finance/expenses`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        fundId: '33333333-3333-4333-8333-333333333333',
+        category: 'Transport',
+        reason: 'Course',
+        amount: 10,
+        currency: 'USD',
+      })
+      .expect(403));
+  it('denies MEMBER creating a song', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/songs`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Kyrie' })
+      .expect(403));
+  it('denies MEMBER publishing mass content', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/masses/${choirA}/liturgy`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Messe du dimanche',
+        liturgicalDate: '2026-09-06',
+      })
+      .expect(403));
+  it('denies MEMBER publishing an announcement', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/announcements`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Réunion', body: 'Réunion du comité.' })
+      .expect(403));
   it('allows MEMBER to read the calendar', () =>
     request(app.getHttpServer())
       .get(`/api/v1/choirs/${choirA}/activities`)

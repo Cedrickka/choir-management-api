@@ -103,6 +103,125 @@ enum NotificationJobStatus {
   CANCELLED
 }
 
+enum CurrencyCode {
+  CDF
+  USD
+}
+
+enum FinanceFundType {
+  ORDINARY
+  ASSISTANCE
+  PROJECT
+  ACTIVITY
+  OTHER
+}
+
+enum FinanceContributionFrequency {
+  ONCE
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum FinanceTargetType {
+  ALL_MEMBERS
+  VOICE_SECTIONS
+  MEMBERS
+}
+
+enum FinancePaymentMethod {
+  CASH
+  MOBILE_MONEY
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+enum FinanceEntryStatus {
+  PENDING
+  VALIDATED
+  CANCELLED
+}
+
+enum FinanceMovementType {
+  OPENING_BALANCE
+  CONTRIBUTION_PAYMENT
+  INCOME
+  EXPENSE
+  REVERSAL
+}
+
+enum SongStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SongDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum LiturgicalSeason {
+  ADVENT
+  CHRISTMAS
+  LENT
+  EASTER
+  ORDINARY_TIME
+  OTHER
+}
+
+enum SongTrackType {
+  SOPRANO
+  ALTO
+  TENOR
+  BASS
+  ENSEMBLE
+  INSTRUMENTAL
+  GUIDE
+  OTHER
+}
+
+enum MediaVisibility {
+  ALL_MEMBERS
+  VOICE_SECTION
+  LEADERS_ONLY
+}
+
+enum SongMasteryStatus {
+  TO_DISCOVER
+  IN_PROGRESS
+  MASTERED
+  TO_REVIEW
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AnnouncementPriority {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum AnnouncementAudienceType {
+  ALL_MEMBERS
+  VOICE_SECTIONS
+  ROLES
+  MEMBERS
+}
+
+enum AnnouncementTargetType {
+  VOICE_SECTION
+  ROLE
+  MEMBERSHIP
+}
+
 model User {
   id            String         @id @default(uuid()) @db.Uuid
   email         String?        @unique
@@ -135,51 +254,79 @@ model Organization {
 }
 
 model Choir {
-  id                    String                 @id @default(uuid()) @db.Uuid
-  organizationId        String                 @db.Uuid
-  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name                  String
-  slug                  String                 @unique
-  timezone              String                 @default("Africa/Kinshasa")
-  settings              Json                   @default("{}")
-  status                EntityStatus           @default(ACTIVE)
-  memberships           Membership[]
-  voiceSections         VoiceSection[]
-  pastoralYears         PastoralYear[]
-  activitySeries        ActivitySeries[]
-  activities            Activity[]
-  attendances           Attendance[]
-  notificationTemplates NotificationTemplate[]
-  notificationJobs      NotificationJob[]
-  auditLogs             AuditLog[]
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+  id                      String                    @id @default(uuid()) @db.Uuid
+  organizationId          String                    @db.Uuid
+  organization            Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name                    String
+  slug                    String                    @unique
+  timezone                String                    @default("Africa/Kinshasa")
+  settings                Json                      @default("{}")
+  status                  EntityStatus              @default(ACTIVE)
+  memberships             Membership[]
+  voiceSections           VoiceSection[]
+  pastoralYears           PastoralYear[]
+  activitySeries          ActivitySeries[]
+  activities              Activity[]
+  attendances             Attendance[]
+  notificationTemplates   NotificationTemplate[]
+  notificationJobs        NotificationJob[]
+  financeFunds            FinanceFund[]
+  contributions           Contribution[]
+  contributionObligations ContributionObligation[]
+  contributionPayments    ContributionPayment[]
+  financeIncomes          FinanceIncome[]
+  financeExpenses         FinanceExpense[]
+  financeMovements        FinanceMovement[]
+  songs                   Song[]
+  songTracks              SongTrack[]
+  songRehearsals          SongRehearsal[]
+  songMasteries           SongVoiceSectionMastery[]
+  massContents            MassContent[]
+  massSongbooks           MassSongbook[]
+  announcements           Announcement[]
+  auditLogs               AuditLog[]
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
 
   @@index([organizationId])
   @@map("choirs")
 }
 
 model Membership {
-  id                    String                   @id @default(uuid()) @db.Uuid
-  userId                String                   @db.Uuid
-  choirId               String                   @db.Uuid
-  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  choir                 Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
-  status                MembershipStatus         @default(ACTIVE)
-  joinedAt              DateTime                 @default(now())
-  archivedAt            DateTime?
-  profile               MemberProfile?
-  roles                 MembershipRole[]
-  sectionAssignments    VoiceSectionAssignment[]
-  responsibleActivities Activity[]               @relation("ActivityResponsible")
-  targetedActivities    ActivityTarget[]
-  attendances           Attendance[]
-  attendanceQrTokens    AttendanceQrToken[]
-  performedScans        AttendanceScan[]         @relation("AttendanceScanner")
-  notificationJobs      NotificationJob[]
-  inAppNotifications    InAppNotification[]
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
+  id                            String                    @id @default(uuid()) @db.Uuid
+  userId                        String                    @db.Uuid
+  choirId                       String                    @db.Uuid
+  user                          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  choir                         Choir                     @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  status                        MembershipStatus          @default(ACTIVE)
+  joinedAt                      DateTime                  @default(now())
+  archivedAt                    DateTime?
+  profile                       MemberProfile?
+  roles                         MembershipRole[]
+  sectionAssignments            VoiceSectionAssignment[]
+  responsibleActivities         Activity[]                @relation("ActivityResponsible")
+  targetedActivities            ActivityTarget[]
+  attendances                   Attendance[]
+  attendanceQrTokens            AttendanceQrToken[]
+  performedScans                AttendanceScan[]          @relation("AttendanceScanner")
+  notificationJobs              NotificationJob[]
+  inAppNotifications            InAppNotification[]
+  contributionTargets           ContributionTarget[]
+  contributionObligations       ContributionObligation[]
+  contributionPayments          ContributionPayment[]
+  validatedContributionPayments ContributionPayment[]     @relation("ContributionPaymentValidator")
+  validatedFinanceIncomes       FinanceIncome[]           @relation("FinanceIncomeValidator")
+  validatedFinanceExpenses      FinanceExpense[]          @relation("FinanceExpenseValidator")
+  createdSongs                  Song[]                    @relation("SongCreator")
+  createdSongRehearsals         SongRehearsal[]           @relation("SongRehearsalCreator")
+  updatedSongMasteries          SongVoiceSectionMastery[] @relation("SongMasteryUpdater")
+  createdMassContents           MassContent[]             @relation("MassContentCreator")
+  createdMassSongbooks          MassSongbook[]            @relation("MassSongbookCreator")
+  createdAnnouncements          Announcement[]            @relation("AnnouncementCreator")
+  announcementTargets           AnnouncementTarget[]
+  announcementReads             AnnouncementRead[]
+  createdAt                     DateTime                  @default(now())
+  updatedAt                     DateTime                  @updatedAt
 
   @@unique([userId, choirId])
   @@index([choirId, status])
@@ -248,6 +395,9 @@ model Activity {
   attendances             Attendance[]
   attendanceQrTokens      AttendanceQrToken[]
   notificationJobs        NotificationJob[]
+  songRehearsals          SongRehearsal[]
+  massContent             MassContent?
+  massSongbooks           MassSongbook[]
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
 
@@ -268,15 +418,19 @@ model ActivityTarget {
 }
 
 model VoiceSection {
-  id          String                   @id @default(uuid()) @db.Uuid
-  choirId     String                   @db.Uuid
-  choir       Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
-  name        String
-  order       Int                      @default(0)
-  profiles    MemberProfile[]
-  assignments VoiceSectionAssignment[]
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
+  id                  String                    @id @default(uuid()) @db.Uuid
+  choirId             String                    @db.Uuid
+  choir               Choir                     @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  name                String
+  order               Int                       @default(0)
+  profiles            MemberProfile[]
+  assignments         VoiceSectionAssignment[]
+  contributionTargets ContributionTarget[]
+  songTracks          SongTrack[]
+  songMasteries       SongVoiceSectionMastery[]
+  announcementTargets AnnouncementTarget[]
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
 
   @@unique([choirId, name])
   @@map("voice_sections")
@@ -319,16 +473,17 @@ model VoiceSectionAssignment {
 }
 
 model Role {
-  id             String           @id @default(uuid()) @db.Uuid
-  organizationId String?          @db.Uuid
-  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  code           String
-  name           String
-  isSystem       Boolean          @default(false)
-  permissions    RolePermission[]
-  memberships    MembershipRole[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                  String               @id @default(uuid()) @db.Uuid
+  organizationId      String?              @db.Uuid
+  organization        Organization?        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code                String
+  name                String
+  isSystem            Boolean              @default(false)
+  permissions         RolePermission[]
+  memberships         MembershipRole[]
+  announcementTargets AnnouncementTarget[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@unique([organizationId, code])
   @@map("roles")
@@ -530,4 +685,411 @@ model InAppNotification {
 
   @@index([membershipId, readAt, createdAt])
   @@map("in_app_notifications")
+}
+
+model FinanceFund {
+  id             String                @id @default(uuid()) @db.Uuid
+  choirId        String                @db.Uuid
+  choir          Choir                 @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  name           String
+  type           FinanceFundType       @default(ORDINARY)
+  currency       CurrencyCode
+  initialBalance Decimal               @default(0) @db.Decimal(14, 2)
+  status         EntityStatus          @default(ACTIVE)
+  contributions  Contribution[]
+  payments       ContributionPayment[]
+  incomes        FinanceIncome[]
+  expenses       FinanceExpense[]
+  movements      FinanceMovement[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([choirId, name, currency])
+  @@index([choirId, currency])
+  @@map("finance_funds")
+}
+
+model Contribution {
+  id          String                       @id @default(uuid()) @db.Uuid
+  choirId     String                       @db.Uuid
+  choir       Choir                        @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  fundId      String                       @db.Uuid
+  fund        FinanceFund                  @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  title       String
+  description String?
+  amount      Decimal                      @db.Decimal(14, 2)
+  currency    CurrencyCode
+  frequency   FinanceContributionFrequency @default(ONCE)
+  dueDate     DateTime                     @db.Date
+  targetType  FinanceTargetType            @default(ALL_MEMBERS)
+  status      EntityStatus                 @default(ACTIVE)
+  targets     ContributionTarget[]
+  obligations ContributionObligation[]
+  payments    ContributionPayment[]
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+
+  @@index([choirId, dueDate])
+  @@index([fundId])
+  @@map("contributions")
+}
+
+model ContributionTarget {
+  id             String        @id @default(uuid()) @db.Uuid
+  contributionId String        @db.Uuid
+  contribution   Contribution  @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  membershipId   String?       @db.Uuid
+  membership     Membership?   @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  voiceSectionId String?       @db.Uuid
+  voiceSection   VoiceSection? @relation(fields: [voiceSectionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@unique([contributionId, membershipId])
+  @@unique([contributionId, voiceSectionId])
+  @@index([membershipId])
+  @@index([voiceSectionId])
+  @@map("contribution_targets")
+}
+
+model ContributionObligation {
+  id             String                @id @default(uuid()) @db.Uuid
+  choirId        String                @db.Uuid
+  choir          Choir                 @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  contributionId String                @db.Uuid
+  contribution   Contribution          @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  membershipId   String                @db.Uuid
+  membership     Membership            @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  amount         Decimal               @db.Decimal(14, 2)
+  currency       CurrencyCode
+  dueDate        DateTime              @db.Date
+  waivedAt       DateTime?
+  cancelledAt    DateTime?
+  payments       ContributionPayment[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([contributionId, membershipId])
+  @@index([choirId, membershipId, dueDate])
+  @@map("contribution_obligations")
+}
+
+model ContributionPayment {
+  id                      String                 @id @default(uuid()) @db.Uuid
+  choirId                 String                 @db.Uuid
+  choir                   Choir                  @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  obligationId            String                 @db.Uuid
+  obligation              ContributionObligation @relation(fields: [obligationId], references: [id], onDelete: Restrict)
+  contributionId          String                 @db.Uuid
+  contribution            Contribution           @relation(fields: [contributionId], references: [id], onDelete: Restrict)
+  fundId                  String                 @db.Uuid
+  fund                    FinanceFund            @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  membershipId            String                 @db.Uuid
+  membership              Membership             @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  amount                  Decimal                @db.Decimal(14, 2)
+  currency                CurrencyCode
+  method                  FinancePaymentMethod   @default(CASH)
+  status                  FinanceEntryStatus     @default(VALIDATED)
+  paidAt                  DateTime               @default(now())
+  validatedAt             DateTime?
+  validatedByMembershipId String?                @db.Uuid
+  validatedBy             Membership?            @relation("ContributionPaymentValidator", fields: [validatedByMembershipId], references: [id], onDelete: SetNull)
+  reference               String?
+  notes                   String?
+  cancelledAt             DateTime?
+  cancellationReason      String?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  @@index([choirId, membershipId])
+  @@index([obligationId])
+  @@map("contribution_payments")
+}
+
+model FinanceIncome {
+  id                      String               @id @default(uuid()) @db.Uuid
+  choirId                 String               @db.Uuid
+  choir                   Choir                @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  fundId                  String               @db.Uuid
+  fund                    FinanceFund          @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  title                   String
+  category                String?
+  source                  String?
+  description             String?
+  amount                  Decimal              @db.Decimal(14, 2)
+  currency                CurrencyCode
+  method                  FinancePaymentMethod @default(CASH)
+  status                  FinanceEntryStatus   @default(VALIDATED)
+  receivedAt              DateTime             @default(now())
+  proofUrl                String?
+  proofStorageKey         String?
+  validatedAt             DateTime?
+  validatedByMembershipId String?              @db.Uuid
+  validatedBy             Membership?          @relation("FinanceIncomeValidator", fields: [validatedByMembershipId], references: [id], onDelete: SetNull)
+  cancelledAt             DateTime?
+  cancellationReason      String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  @@index([choirId, receivedAt])
+  @@map("finance_incomes")
+}
+
+model FinanceExpense {
+  id                      String               @id @default(uuid()) @db.Uuid
+  choirId                 String               @db.Uuid
+  choir                   Choir                @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  fundId                  String               @db.Uuid
+  fund                    FinanceFund          @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  category                String
+  beneficiary             String?
+  reason                  String
+  amount                  Decimal              @db.Decimal(14, 2)
+  currency                CurrencyCode
+  method                  FinancePaymentMethod @default(CASH)
+  status                  FinanceEntryStatus   @default(VALIDATED)
+  expenseDate             DateTime             @default(now())
+  proofUrl                String?
+  proofStorageKey         String?
+  validatedAt             DateTime?
+  validatedByMembershipId String?              @db.Uuid
+  validatedBy             Membership?          @relation("FinanceExpenseValidator", fields: [validatedByMembershipId], references: [id], onDelete: SetNull)
+  cancelledAt             DateTime?
+  cancellationReason      String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  @@index([choirId, expenseDate])
+  @@map("finance_expenses")
+}
+
+model FinanceMovement {
+  id          String              @id @default(uuid()) @db.Uuid
+  choirId     String              @db.Uuid
+  choir       Choir               @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  fundId      String              @db.Uuid
+  fund        FinanceFund         @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  type        FinanceMovementType
+  amount      Decimal             @db.Decimal(14, 2)
+  currency    CurrencyCode
+  sourceType  String
+  sourceId    String
+  description String?
+  occurredAt  DateTime            @default(now())
+  cancelledAt DateTime?
+  createdAt   DateTime            @default(now())
+
+  @@unique([sourceType, sourceId])
+  @@index([choirId, occurredAt])
+  @@index([fundId, currency, occurredAt])
+  @@map("finance_movements")
+}
+
+model Song {
+  id                    String                    @id @default(uuid()) @db.Uuid
+  choirId               String                    @db.Uuid
+  choir                 Choir                     @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  title                 String
+  composer              String?
+  author                String?
+  language              String                    @default("fr")
+  category              String?
+  liturgicalSeason      LiturgicalSeason?
+  tags                  String[]                  @default([])
+  difficulty            SongDifficulty?
+  status                SongStatus                @default(DRAFT)
+  lyrics                String?
+  lyricsFormat          String                    @default("plain_text")
+  copyrightNotes        String?
+  coverImageUrl         String?
+  scorePdfUrl           String?
+  createdByMembershipId String?                   @db.Uuid
+  createdBy             Membership?               @relation("SongCreator", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  tracks                SongTrack[]
+  rehearsals            SongRehearsal[]
+  masteries             SongVoiceSectionMastery[]
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([choirId, title])
+  @@index([choirId, status])
+  @@map("songs")
+}
+
+model SongTrack {
+  id              String          @id @default(uuid()) @db.Uuid
+  choirId         String          @db.Uuid
+  choir           Choir           @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  songId          String          @db.Uuid
+  song            Song            @relation(fields: [songId], references: [id], onDelete: Cascade)
+  voiceSectionId  String?         @db.Uuid
+  voiceSection    VoiceSection?   @relation(fields: [voiceSectionId], references: [id], onDelete: SetNull)
+  type            SongTrackType
+  title           String
+  version         Int             @default(1)
+  keySignature    String?
+  comment         String?
+  visibility      MediaVisibility @default(ALL_MEMBERS)
+  storageKey      String
+  mimeType        String
+  sizeBytes       Int
+  checksum        String
+  durationSeconds Int?
+  archivedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([choirId, songId, type])
+  @@index([voiceSectionId])
+  @@map("song_tracks")
+}
+
+model SongRehearsal {
+  id                    String      @id @default(uuid()) @db.Uuid
+  choirId               String      @db.Uuid
+  choir                 Choir       @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  songId                String      @db.Uuid
+  song                  Song        @relation(fields: [songId], references: [id], onDelete: Cascade)
+  activityId            String?     @db.Uuid
+  activity              Activity?   @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  rehearsedAt           DateTime
+  notes                 String?
+  createdByMembershipId String?     @db.Uuid
+  createdBy             Membership? @relation("SongRehearsalCreator", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  createdAt             DateTime    @default(now())
+
+  @@unique([songId, activityId])
+  @@index([choirId, rehearsedAt])
+  @@map("song_rehearsals")
+}
+
+model SongVoiceSectionMastery {
+  id                    String            @id @default(uuid()) @db.Uuid
+  choirId               String            @db.Uuid
+  choir                 Choir             @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  songId                String            @db.Uuid
+  song                  Song              @relation(fields: [songId], references: [id], onDelete: Cascade)
+  voiceSectionId        String            @db.Uuid
+  voiceSection          VoiceSection      @relation(fields: [voiceSectionId], references: [id], onDelete: Cascade)
+  status                SongMasteryStatus @default(TO_DISCOVER)
+  notes                 String?
+  updatedByMembershipId String?           @db.Uuid
+  updatedBy             Membership?       @relation("SongMasteryUpdater", fields: [updatedByMembershipId], references: [id], onDelete: SetNull)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@unique([songId, voiceSectionId])
+  @@index([choirId, status])
+  @@map("song_voice_section_masteries")
+}
+
+model MassContent {
+  id                    String        @id @default(uuid()) @db.Uuid
+  choirId               String        @db.Uuid
+  choir                 Choir         @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  activityId            String?       @unique @db.Uuid
+  activity              Activity?     @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  title                 String
+  liturgicalDate        DateTime      @db.Date
+  readingsReferences    Json          @default("{}")
+  firstReadingText      String?
+  psalmText             String?
+  secondReadingText     String?
+  gospelText            String?
+  summary               String?
+  orientation           String?
+  maestroMessage        String?
+  status                ContentStatus @default(DRAFT)
+  publishedAt           DateTime?
+  createdByMembershipId String?       @db.Uuid
+  createdBy             Membership?   @relation("MassContentCreator", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([choirId, liturgicalDate])
+  @@index([choirId, status])
+  @@map("mass_contents")
+}
+
+model MassSongbook {
+  id                    String      @id @default(uuid()) @db.Uuid
+  choirId               String      @db.Uuid
+  choir                 Choir       @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  activityId            String?     @db.Uuid
+  activity              Activity?   @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  title                 String
+  storageKey            String
+  fileUrl               String?
+  mimeType              String      @default("application/pdf")
+  sizeBytes             Int?
+  checksum              String?
+  version               Int         @default(1)
+  isDownloadable        Boolean     @default(true)
+  publicTokenHash       String?     @unique
+  publicExpiresAt       DateTime?
+  publicRevokedAt       DateTime?
+  createdByMembershipId String?     @db.Uuid
+  createdBy             Membership? @relation("MassSongbookCreator", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([choirId, activityId])
+  @@map("mass_songbooks")
+}
+
+model Announcement {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  choirId               String                   @db.Uuid
+  choir                 Choir                    @relation(fields: [choirId], references: [id], onDelete: Cascade)
+  title                 String
+  body                  String
+  priority              AnnouncementPriority     @default(NORMAL)
+  audienceType          AnnouncementAudienceType @default(ALL_MEMBERS)
+  attachments           Json                     @default("[]")
+  status                ContentStatus            @default(DRAFT)
+  publishAt             DateTime                 @default(now())
+  expiresAt             DateTime?
+  readRequired          Boolean                  @default(false)
+  createdByMembershipId String?                  @db.Uuid
+  createdBy             Membership?              @relation("AnnouncementCreator", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  targets               AnnouncementTarget[]
+  reads                 AnnouncementRead[]
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  @@index([choirId, status, publishAt])
+  @@index([choirId, expiresAt])
+  @@map("announcements")
+}
+
+model AnnouncementTarget {
+  id             String                 @id @default(uuid()) @db.Uuid
+  announcementId String                 @db.Uuid
+  announcement   Announcement           @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  targetType     AnnouncementTargetType
+  membershipId   String?                @db.Uuid
+  membership     Membership?            @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  voiceSectionId String?                @db.Uuid
+  voiceSection   VoiceSection?          @relation(fields: [voiceSectionId], references: [id], onDelete: Cascade)
+  roleId         String?                @db.Uuid
+  role           Role?                  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt      DateTime               @default(now())
+
+  @@index([announcementId, targetType])
+  @@index([membershipId])
+  @@index([voiceSectionId])
+  @@index([roleId])
+  @@map("announcement_targets")
+}
+
+model AnnouncementRead {
+  announcementId String       @db.Uuid
+  membershipId   String       @db.Uuid
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  membership     Membership   @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now())
+  acknowledgedAt DateTime?
+
+  @@id([announcementId, membershipId])
+  @@index([membershipId, readAt])
+  @@map("announcement_reads")
 }

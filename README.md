@@ -90,6 +90,42 @@ Les jobs gardent un instantané des messages et une clé d’idempotence unique.
 
 Les statistiques sont recalculées depuis les activités et pointages sources : aucune agrégation non auditable n’est la source de vérité. Les filtres initiaux couvrent période, type d’activité, membre et pupitre. Le dénominateur est explicité dans chaque réponse : seules les activités passées, non annulées/reportées, avec présence requise, et pour lesquelles le membre est attendu, entrent dans le taux d’assiduité. La ponctualité utilise les arrivées à l’heure divisées par les présences enregistrées. Les statistiques personnelles ne dévoilent jamais les données d’autres choristes ; les statistiques globales et exports exigent la permission de lecture des présences.
 
+## Lot 6 — finances
+
+- `GET|POST /api/v1/choirs/:choirId/finance/funds`
+- `GET|POST /api/v1/choirs/:choirId/finance/contributions`
+- `POST /api/v1/choirs/:choirId/finance/payments`
+- `POST /api/v1/choirs/:choirId/finance/incomes`
+- `POST /api/v1/choirs/:choirId/finance/expenses`
+- `GET /api/v1/choirs/:choirId/finance/reports`
+- `GET /api/v1/me/finance`
+
+Les fonds sont séparés par devise (`CDF`, `USD`) et les rapports n’additionnent jamais deux devises. Une cotisation crée des obligations par membre ciblé ; les paiements, recettes et dépenses validés créent des mouvements financiers signés. Les rapports affichent solde initial, recettes, dépenses, mouvement net et solde final par fonds.
+
+## Lot 7 — musique
+
+- `GET|POST /api/v1/choirs/:choirId/songs`
+- `GET /api/v1/choirs/:choirId/songs/:songId`
+- `GET|POST /api/v1/choirs/:choirId/songs/:songId/tracks`
+- `POST /api/v1/choirs/:choirId/songs/:songId/rehearsals`
+- `PATCH /api/v1/choirs/:choirId/songs/:songId/mastery/:voiceSectionId`
+
+La bibliothèque stocke les fiches chants, paroles, tags, saison liturgique, historique de répétition, statut de maîtrise par pupitre et métadonnées des pistes audio. Les fichiers audio ne sont pas stockés en base : seuls `storageKey`, mime type, taille, checksum et durée sont conservés pour brancher un stockage objet.
+
+## Lot 8 — messe et contenu
+
+- `GET /api/v1/choirs/:choirId/masses/next-liturgy`
+- `POST /api/v1/choirs/:choirId/masses/:activityId/liturgy`
+- `GET /api/v1/choirs/:choirId/masses/:activityId/songbooks`
+- `POST /api/v1/choirs/:choirId/masses/:activityId/songbook`
+- `POST /api/v1/choirs/:choirId/songbooks/:songbookId/public-link`
+- `GET /api/v1/public/songbooks/:token`
+- `GET|POST /api/v1/choirs/:choirId/announcements`
+- `POST /api/v1/choirs/:choirId/announcements/:announcementId/read`
+- `GET /api/v1/choirs/:choirId/announcements/:announcementId/read-receipts`
+
+Les textes de messe sont saisis manuellement et seuls les contenus publiés sont visibles aux choristes. Les carnets PDF sont référencés par métadonnées et peuvent recevoir un lien public temporaire dont seul le hash est conservé. Les communiqués supportent priorités, audiences ciblées, expiration et accusés de lecture.
+
 ## Docker local
 
 ```bash

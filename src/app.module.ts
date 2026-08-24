@@ -17,6 +17,10 @@ import { CalendarModule } from './calendar/calendar.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { FinanceModule } from './finance/finance.module';
+import { MusicModule } from './music/music.module';
+import { LiturgyModule } from './liturgy/liturgy.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -45,6 +49,10 @@ import { StatisticsModule } from './statistics/statistics.module';
     AttendanceModule,
     NotificationsModule,
     StatisticsModule,
+    FinanceModule,
+    MusicModule,
+    LiturgyModule,
+    AnnouncementsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
