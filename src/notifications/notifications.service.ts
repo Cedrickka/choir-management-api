@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
@@ -12,10 +13,14 @@ import { TemplateRenderer } from './template-renderer';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+  private dispatcherMutedUntil = 0;
+
   constructor(
     private prisma: PrismaService,
     private push: PushProvider,
     private queue: NotificationQueueService,
+    @Optional() private config?: ConfigService,
   ) {}
   listTemplates(choirId: string) {
     return this.prisma.notificationTemplate.findMany({
@@ -141,12 +146,30 @@ export class NotificationsService {
     }
   }
   @Cron('*/30 * * * * *') async dispatchDue() {
-    const jobs = await this.prisma.notificationJob.findMany({
-      where: { status: 'QUEUED', scheduledAt: { lte: new Date() } },
-      take: 50,
-      orderBy: { scheduledAt: 'asc' },
-    });
-    for (const job of jobs) await this.dispatch(job.id);
+    if (!this.isDispatcherEnabled()) return;
+    if (Date.now() < this.dispatcherMutedUntil) return;
+
+    try {
+      const jobs = await this.prisma.notificationJob.findMany({
+        where: { status: 'QUEUED', scheduledAt: { lte: new Date() } },
+        take: 50,
+        orderBy: { scheduledAt: 'asc' },
+      });
+      for (const job of jobs) await this.dispatch(job.id);
+    } catch (error) {
+      if (this.isDatabaseAvailabilityError(error)) {
+        this.dispatcherMutedUntil = Date.now() + 5 * 60 * 1000;
+        this.logger.warn(
+          `Notification dispatcher paused for 5 minutes: ${this.errorSummary(error)}`,
+        );
+        return;
+      }
+
+      this.logger.error(
+        `Notification dispatcher failed: ${this.errorSummary(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
   async dispatch(id: string) {
     const claimed = await this.prisma.notificationJob.updateMany({
@@ -243,5 +266,28 @@ export class NotificationsService {
       update: { userId, platform, active: true },
       create: { userId, token, platform },
     });
+  }
+
+  private isDispatcherEnabled() {
+    return this.config?.get<string>('NOTIFICATION_DISPATCHER_ENABLED') === 'true';
+  }
+
+  private isDatabaseAvailabilityError(error: unknown) {
+    const candidate = error as { code?: string; name?: string; message?: string };
+    return (
+      candidate.code === 'P1001' ||
+      candidate.name === 'PrismaClientRustPanicError' ||
+      candidate.message?.includes("Can't reach database server") ||
+      candidate.message?.includes('timer has gone away')
+    );
+  }
+
+  private errorSummary(error: unknown) {
+    if (!(error instanceof Error)) return 'Unknown error';
+    const code = (error as { code?: string }).code;
+    return [code, error.name, error.message.split('\n')[0]]
+      .filter(Boolean)
+      .join(' - ')
+      .slice(0, 500);
   }
 }
