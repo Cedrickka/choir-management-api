@@ -71,6 +71,7 @@ describe('API (e2e)', () => {
         findMany: jest.fn().mockResolvedValue([]),
         count: jest.fn().mockResolvedValue(0),
       },
+      dispensation: { findMany: jest.fn().mockResolvedValue([]) },
       $transaction: jest.fn((operations: Promise<unknown>[]) =>
         Promise.all(operations),
       ),
@@ -178,6 +179,44 @@ describe('API (e2e)', () => {
       .post(`/api/v1/choirs/${choirA}/announcements`)
       .set('Authorization', `Bearer ${token}`)
       .send({ title: 'Réunion', body: 'Réunion du comité.' })
+      .expect(403));
+  it('denies MEMBER initiating a digital payment transaction', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/payments/transactions`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        provider: 'MOCK',
+        idempotencyKey: 'e2e-payment-1',
+        currency: 'CDF',
+        allocations: [
+          {
+            obligationId: '33333333-3333-4333-8333-333333333333',
+            amount: 10,
+          },
+        ],
+      })
+      .expect(403));
+  it('denies MEMBER sending WhatsApp messages', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/messaging/whatsapp/send`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        idempotencyKey: 'e2e-wa-1',
+        membershipId: '33333333-3333-4333-8333-333333333333',
+        body: 'Test',
+      })
+      .expect(403));
+  it('denies MEMBER authorizing offline devices', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/offline/devices`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ deviceIdentifier: 'tablet-1', label: 'Tablette accueil' })
+      .expect(403));
+  it('denies MEMBER creating an RSVP request', () =>
+    request(app.getHttpServer())
+      .post(`/api/v1/choirs/${choirA}/activities/${choirA}/rsvp/request`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ message: 'Confirmez votre disponibilitÃ©.' })
       .expect(403));
   it('allows MEMBER to read the calendar', () =>
     request(app.getHttpServer())

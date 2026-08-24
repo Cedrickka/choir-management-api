@@ -2,9 +2,11 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from '../database/prisma.service';
+import { SubscriptionQuotasService } from '../subscriptions/subscription-quotas.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { ListMembersQuery } from './dto/list-members.query';
@@ -25,7 +27,10 @@ const memberInclude = {
 } as const;
 @Injectable()
 export class MembersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly quotas?: SubscriptionQuotasService,
+  ) {}
   async list(choirId: string, query: ListMembersQuery) {
     const where = {
       choirId,
@@ -93,6 +98,7 @@ export class MembersService {
       select: { organizationId: true },
     });
     if (!choir) throw new NotFoundException('Choir not found');
+    await this.quotas?.enforceMemberLimit(choirId);
     if (
       dto.voiceSectionId &&
       !(await this.prisma.voiceSection.findFirst({

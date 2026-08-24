@@ -39,6 +39,12 @@ type MembershipRow = {
   roles: { role: { code: string } }[];
 };
 
+type DispensationRow = {
+  membershipId: string;
+  startsAt: Date;
+  endsAt: Date;
+};
+
 @Injectable()
 export class StatisticsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -270,7 +276,27 @@ export class StatisticsService {
         })) as AttendanceFact[])
       : [];
 
-    const expectedSlots = this.expectedSlots(activities, memberships);
+    const periodStart = activities[0]?.startsAt;
+    const dispensations =
+      activityIds.length && membershipIds.length
+        ? ((await this.prisma.dispensation.findMany({
+            where: {
+              choirId,
+              membershipId: { in: membershipIds },
+              status: 'APPROVED',
+              excludeFromStatistics: true,
+              startsAt: { lte: computedUntil },
+              ...(periodStart ? { endsAt: { gte: periodStart } } : {}),
+            },
+            select: { membershipId: true, startsAt: true, endsAt: true },
+          })) as DispensationRow[])
+        : [];
+
+    const expectedSlots = this.expectedSlots(
+      activities,
+      memberships,
+      dispensations,
+    );
     const members = memberships
       .map((membership) =>
         StatisticsCalculator.summarizeMember(
@@ -291,7 +317,7 @@ export class StatisticsService {
       overview: StatisticsCalculator.aggregate(members),
       denominator: {
         expectedActivities:
-          'Activités passées, non annulées/reportées, avec présence requise, pour lesquelles le membre est attendu.',
+          'Activités passées, non annulées/reportées, avec présence requise, pour lesquelles le membre est attendu, hors dispenses approuvées configurées comme exclues.',
         attendanceRate: 'présences enregistrées / activités attendues',
         punctualityRate: 'arrivées à l’heure / présences enregistrées',
         participation:
@@ -310,6 +336,7 @@ export class StatisticsService {
   private expectedSlots(
     activities: ActivityRow[],
     memberships: MembershipRow[],
+    dispensations: DispensationRow[] = [],
   ): ExpectedAttendanceSlot[] {
     const slots: ExpectedAttendanceSlot[] = [];
     for (const activity of activities) {
@@ -323,6 +350,15 @@ export class StatisticsService {
         if (
           activity.visibility === 'LEADERS_ONLY' &&
           !membership.roles.some((role) => role.role.code !== 'MEMBER')
+        )
+          continue;
+        if (
+          dispensations.some(
+            (dispensation) =>
+              dispensation.membershipId === membership.id &&
+              dispensation.startsAt.getTime() <= activity.endsAt.getTime() &&
+              dispensation.endsAt.getTime() >= activity.startsAt.getTime(),
+          )
         )
           continue;
         slots.push({ activityId: activity.id, membershipId: membership.id });

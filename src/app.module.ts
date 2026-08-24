@@ -21,6 +21,12 @@ import { FinanceModule } from './finance/finance.module';
 import { MusicModule } from './music/music.module';
 import { LiturgyModule } from './liturgy/liturgy.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { JustificationsModule } from './justifications/justifications.module';
+import { RsvpModule } from './rsvp/rsvp.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { PaymentsModule } from './payments/payments.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { OfflineModule } from './offline/offline.module';
 
 @Module({
   imports: [
@@ -53,6 +59,12 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     MusicModule,
     LiturgyModule,
     AnnouncementsModule,
+    SubscriptionsModule,
+    JustificationsModule,
+    RsvpModule,
+    PaymentsModule,
+    MessagingModule,
+    OfflineModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

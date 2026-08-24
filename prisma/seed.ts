@@ -33,6 +33,19 @@ const permissionCodes = [
   'calendar.read',
   'calendar.create',
   'calendar.update',
+  'justifications.create',
+  'justifications.read',
+  'justifications.manage',
+  'rsvp.respond',
+  'rsvp.read',
+  'rsvp.manage',
+  'subscriptions.read',
+  'subscriptions.manage',
+  'messaging.read',
+  'messaging.manage',
+  'payments.read',
+  'payments.manage',
+  'offline.manage',
 ];
 const rolePermissions: Record<string, string[]> = {
   ADMIN: permissionCodes,
@@ -134,6 +147,61 @@ const rolePermissions: Record<string, string[]> = {
     'media.read',
   ],
 };
+const grant = (roleCode: string, codes: string[]) => {
+  rolePermissions[roleCode] = [
+    ...new Set([...(rolePermissions[roleCode] || []), ...codes]),
+  ];
+};
+grant('PRESIDENT', [
+  'justifications.create',
+  'justifications.read',
+  'justifications.manage',
+  'rsvp.respond',
+  'rsvp.read',
+  'rsvp.manage',
+  'subscriptions.read',
+  'subscriptions.manage',
+  'messaging.read',
+  'messaging.manage',
+  'payments.read',
+  'offline.manage',
+]);
+grant('SECRETARY', [
+  'justifications.create',
+  'justifications.read',
+  'justifications.manage',
+  'rsvp.respond',
+  'rsvp.read',
+  'rsvp.manage',
+  'subscriptions.read',
+  'messaging.read',
+  'messaging.manage',
+  'offline.manage',
+]);
+grant('MAESTRO', [
+  'justifications.create',
+  'rsvp.respond',
+  'rsvp.read',
+  'rsvp.manage',
+  'messaging.read',
+  'messaging.manage',
+]);
+grant('TREASURER', [
+  'subscriptions.read',
+  'payments.read',
+  'payments.manage',
+  'messaging.read',
+]);
+grant('ATTENDANCE_CONTROLLER', [
+  'justifications.create',
+  'justifications.read',
+  'justifications.manage',
+  'rsvp.respond',
+  'rsvp.read',
+  'offline.manage',
+]);
+grant('SECTION_LEADER', ['justifications.create', 'rsvp.respond', 'rsvp.read']);
+grant('MEMBER', ['justifications.create', 'rsvp.respond']);
 async function main() {
   const organization = await prisma.organization.upsert({
     where: { id: '11111111-1111-4111-8111-111111111111' },
@@ -154,6 +222,75 @@ async function main() {
       timezone: 'Africa/Kinshasa',
     },
   });
+  const planRows = {
+    FREE: await prisma.subscriptionPlan.upsert({
+      where: { code: 'FREE' },
+      update: {
+        name: 'Free',
+        quotas: { members: 30, storageGb: 1, whatsappCredits: 0 },
+      },
+      create: {
+        code: 'FREE',
+        name: 'Free',
+        description: 'Plan de démarrage pour une petite chorale.',
+        monthlyPrice: 0,
+        yearlyPrice: 0,
+        currency: 'USD',
+        quotas: { members: 30, storageGb: 1, whatsappCredits: 0 },
+      },
+    }),
+    PRO: await prisma.subscriptionPlan.upsert({
+      where: { code: 'PRO' },
+      update: {
+        name: 'Pro',
+        quotas: { members: 150, storageGb: 10, whatsappCredits: 0 },
+      },
+      create: {
+        code: 'PRO',
+        name: 'Pro',
+        description: 'Plan pour chorales structurées avec plusieurs responsables.',
+        monthlyPrice: 15,
+        yearlyPrice: 150,
+        currency: 'USD',
+        quotas: { members: 150, storageGb: 10, whatsappCredits: 0 },
+      },
+    }),
+    PREMIUM: await prisma.subscriptionPlan.upsert({
+      where: { code: 'PREMIUM' },
+      update: {
+        name: 'Premium',
+        quotas: { members: 500, storageGb: 50, whatsappCredits: 0 },
+      },
+      create: {
+        code: 'PREMIUM',
+        name: 'Premium',
+        description: 'Plan avancé pour paroisses ou organisations multi-chorales.',
+        monthlyPrice: 49,
+        yearlyPrice: 490,
+        currency: 'USD',
+        quotas: { members: 500, storageGb: 50, whatsappCredits: 0 },
+      },
+    }),
+  };
+  const currentSubscription = await prisma.organizationSubscription.findFirst({
+    where: { organizationId: organization.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (currentSubscription) {
+    await prisma.organizationSubscription.update({
+      where: { id: currentSubscription.id },
+      data: { planId: planRows.PRO.id, status: 'ACTIVE' },
+    });
+  } else {
+    await prisma.organizationSubscription.create({
+      data: {
+        organizationId: organization.id,
+        planId: planRows.PRO.id,
+        status: 'ACTIVE',
+        billingPeriod: 'MONTHLY',
+      },
+    });
+  }
   for (const [order, name] of ['Soprano', 'Alto', 'Ténor', 'Basse'].entries())
     await prisma.voiceSection.upsert({
       where: { choirId_name: { choirId: choir.id, name } },
@@ -254,6 +391,74 @@ async function main() {
     });
     demoMemberships[email] = membership.id;
   }
+  await prisma.user.update({
+    where: { email: 'membre1@csjb.local' },
+    data: { phone: '+243810000001' },
+  });
+  await prisma.memberProfile.update({
+    where: { membershipId: demoMemberships['membre1@csjb.local'] },
+    data: {
+      whatsappConsentAt: new Date(),
+      whatsappConsentSource: 'seed',
+    },
+  });
+  await prisma.justification.upsert({
+    where: { id: '91919191-9191-4919-8919-919191919191' },
+    update: {},
+    create: {
+      id: '91919191-9191-4919-8919-919191919191',
+      choirId: choir.id,
+      membershipId: demoMemberships['membre1@csjb.local'],
+      activityId: '22222222-2222-4222-8222-222222222222',
+      kind: 'ABSENCE',
+      reason: 'WORK',
+      comment: 'Exemple de justification soumise par un choriste.',
+      status: 'PENDING',
+    },
+  });
+  await prisma.dispensation.upsert({
+    where: { id: '92929292-9292-4929-8929-929292929292' },
+    update: {
+      status: 'APPROVED',
+      excludeFromStatistics: true,
+    },
+    create: {
+      id: '92929292-9292-4929-8929-929292929292',
+      choirId: choir.id,
+      membershipId: demoMemberships['membre2@csjb.local'],
+      startsAt: new Date('2026-09-01T00:00:00Z'),
+      endsAt: new Date('2026-09-15T23:59:59Z'),
+      reason: 'TRAVEL',
+      comment: 'Exemple de dispense approuvée exclue des statistiques.',
+      status: 'APPROVED',
+      excludeFromStatistics: true,
+      reviewedByMembershipId: demoMemberships['secretaire@csjb.local'],
+      reviewedAt: new Date(),
+    },
+  });
+  await prisma.messagingTemplate.upsert({
+    where: {
+      choirId_name_provider: {
+        choirId: choir.id,
+        name: 'Rappel WhatsApp répétition',
+        provider: 'MOCK',
+      },
+    },
+    update: {
+      body: 'Bonjour {Prenom}, rappel : {Activite} aura lieu le {Date}.',
+      variables: ['Prenom', 'Activite', 'Date'],
+      active: true,
+    },
+    create: {
+      choirId: choir.id,
+      name: 'Rappel WhatsApp répétition',
+      provider: 'MOCK',
+      providerTemplateName: 'csjb_activity_reminder',
+      language: 'fr',
+      variables: ['Prenom', 'Activite', 'Date'],
+      body: 'Bonjour {Prenom}, rappel : {Activite} aura lieu le {Date}.',
+    },
+  });
   await prisma.financeFund.upsert({
     where: {
       choirId_name_currency: {
@@ -358,6 +563,37 @@ async function main() {
       endsAt: new Date('2026-09-06T10:00:00Z'),
       timezone: 'Africa/Kinshasa',
       location: 'Paroisse Saint Jean Bosco',
+    },
+  });
+  const rsvpRequest = await prisma.rsvpRequest.upsert({
+    where: { activityId: mass.id },
+    update: {
+      message: 'Merci de confirmer votre disponibilité pour la messe.',
+      deadlineAt: new Date('2026-09-05T18:00:00Z'),
+    },
+    create: {
+      choirId: choir.id,
+      activityId: mass.id,
+      message: 'Merci de confirmer votre disponibilité pour la messe.',
+      deadlineAt: new Date('2026-09-05T18:00:00Z'),
+      minByVoiceSection: {},
+      createdByMembershipId: demoMemberships['maestro@csjb.local'],
+    },
+  });
+  await prisma.rsvpResponse.upsert({
+    where: {
+      requestId_membershipId: {
+        requestId: rsvpRequest.id,
+        membershipId: demoMemberships['membre1@csjb.local'],
+      },
+    },
+    update: { answer: 'YES', respondedAt: new Date() },
+    create: {
+      requestId: rsvpRequest.id,
+      choirId: choir.id,
+      activityId: mass.id,
+      membershipId: demoMemberships['membre1@csjb.local'],
+      answer: 'YES',
     },
   });
   await prisma.massContent.upsert({

@@ -126,6 +126,45 @@ La bibliothèque stocke les fiches chants, paroles, tags, saison liturgique, his
 
 Les textes de messe sont saisis manuellement et seuls les contenus publiés sont visibles aux choristes. Les carnets PDF sont référencés par métadonnées et peuvent recevoir un lien public temporaire dont seul le hash est conservé. Les communiqués supportent priorités, audiences ciblées, expiration et accusés de lecture.
 
+## Lot 9 â€” portail WordPress
+
+Le portail WordPress vit dans le projet frÃ¨re `choir-platform-portal`. Il fournit le shortcode `[choir_portal]` et agit comme BFF sÃ©curisÃ© vers cette API :
+
+- connexion/dÃ©connexion sans exposer les JWT au JavaScript public ;
+- calendrier et RSVP ;
+- situation financiÃ¨re personnelle ;
+- chants, annonces et prochaine liturgie ;
+- soumission de justification dâ€™absence ou de retard.
+
+WordPress ne stocke pas les prÃ©sences, cotisations, transactions, RSVP ou justifications. Les permissions et lâ€™isolation multi-tenant restent appliquÃ©es par NestJS.
+
+## Lot 10 â€” V2 backend
+
+- `GET|POST /api/v1/choirs/:choirId/justifications`
+- `POST /api/v1/choirs/:choirId/justifications/:justificationId/review`
+- `GET|POST /api/v1/choirs/:choirId/dispensations`
+- `POST /api/v1/choirs/:choirId/dispensations/:dispensationId/review`
+- `POST /api/v1/choirs/:choirId/activities/:activityId/rsvp/request`
+- `GET|POST /api/v1/choirs/:choirId/activities/:activityId/rsvp`
+- `GET /api/v1/choirs/:choirId/activities/:activityId/rsvp/summary`
+- `GET /api/v1/subscriptions/plans`
+- `GET|PUT /api/v1/choirs/:choirId/subscription`
+- `GET|POST /api/v1/choirs/:choirId/payments/transactions`
+- `POST /api/v1/payments/webhooks/:provider`
+- `GET|POST /api/v1/choirs/:choirId/messaging/whatsapp/templates`
+- `GET /api/v1/choirs/:choirId/messaging/whatsapp/attempts`
+- `POST /api/v1/choirs/:choirId/messaging/whatsapp/send`
+- `GET|POST /api/v1/choirs/:choirId/offline/devices`
+- `POST /api/v1/choirs/:choirId/offline/sync`
+
+Les paiements digitaux restent `PENDING` jusquâ€™Ã  confirmation par webhook backend. Les webhooks sont idempotents par fournisseur/Ã©vÃ©nement et peuvent Ãªtre signÃ©s par HMAC `PAYMENT_WEBHOOK_SECRET`. En production, une signature absente ou invalide est refusÃ©e. Les messages WhatsApp passent par une abstraction `MessagingProvider`; le provider initial `MOCK` journalise les tentatives sans appeler Infobip/Meta. La synchronisation offline est idempotente par appareil et `clientEventId`.
+
+Variable additionnelle :
+
+```env
+PAYMENT_WEBHOOK_SECRET=
+```
+
 ## Docker local
 
 ```bash

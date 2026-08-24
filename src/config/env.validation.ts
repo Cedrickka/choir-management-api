@@ -14,6 +14,7 @@ const schema = Joi.object({
   ATTENDANCE_QR_SECRET: Joi.string().min(32).allow('').default(''),
   FIREBASE_PROJECT_ID: Joi.string().allow('').default(''),
   FIREBASE_SERVICE_ACCOUNT_BASE64: Joi.string().allow('').default(''),
+  PAYMENT_WEBHOOK_SECRET: Joi.string().min(32).allow('').default(''),
   LOG_LEVEL: Joi.string().default('info'),
 }).unknown(true);
 export function validateConfig(config: Record<string, unknown>) {
